@@ -258,10 +258,12 @@ How to shard the mapReduce collection:
 	- check the collection you want to shard. 
 	- then just type or enter, as seen below: 
 	- use admin
-	- 
+	
 		db.runCommand({ split: "GT.T1_2", middle: {_id : 1}})
 	or 
 		db.runCommand({ split: "GT.T1_3", middle: {Country_1: 1}})
+		
 	- then go back to the DB where the collections are stored. 
 	- do an sh.status() and it should give you a result showing the shards,
 	- the databases and the chunks on the collections.
+
