@@ -192,7 +192,6 @@ How to shard the MapReduce collection
 // -- check sharding status: 
 > sh.status() 
 
-
 How to load the dataset
 
 " To load the dataset, go to the bin folder of the mongodb database program in your computer. 
@@ -202,3 +201,67 @@ command to import the file in MongoDB:
 ~/Desktop/mongodb/bin/mongoimport --db DB_name --collection Collection_Name 
 --file filename.json --jsonArray --type json --host rs3/localhost:57017 "
 
+
+How to execute and run the MapReduce functions: 
+
+//Assumption: You are in the Mongos 
+	- check the DB that you are in. 
+	- if you are not using the DB yet, just type: use DB_name
+	- check the collection you want to reduce. 
+	- then just type or enter, as seen below: 
+	 
+	db.T1.mapReduce(
+	function(){
+		emit ({"Country": this.Region.Subregion.Country, "City": this.Region.Subregion.Country.City},{"Number_of_Months": 1, "Temperature_Sum": 
+
+this.Region.Subregion.Country.City.Temperature.AvgTemp}); 
+	}, 
+	function(key, values){
+		mR1 = {"Number_of_Months": 0, "Temperature_Sum" : 0};
+		values.forEach(function(value){
+			mR1.Number_of_Months += value.Number_of_Months;
+			mR1.Temperature_Sum += value.Temperature_Sum;
+		});
+		return mR1;
+	},
+	{
+		"out": "T1_2", 
+		"finalize": function(key, newTemp) {
+			newTemp.Avg_Temperature = newTemp.Temperature_Sum / newTemp.Number_of_Months;
+			return newTemp;
+		}
+	})	
+
+	var mFunc = function (){ 
+	emit ({"City": this._id.City, "Average_Temperature": this.value.average}, 1);} 
+
+	var rFunc = function(){return 0;}
+	db.T1_2.mapReduce(mFunc,rFunc, {out:"T1_3"})
+	db.T1_3.update({},{$unset:{value:1}},false,true);
+
+
+How to run the MapReduce functions
+
+//Assumption: You are in the Mongos 
+	- check the DB that you are in. 
+	- if you are not using the DB yet, just type: use DB_name
+	- check the collection you want to reduce. 
+	- then just type or enter, as seen below: 
+
+	db.T1_3.find.pretty();
+
+
+How to shard the mapReduce collection: 
+
+//Assumption: You already have the mapReduced output collection: 
+	- check the DB that you are in. 
+	- check the collection you want to shard. 
+	- then just type or enter, as seen below: 
+	- use admin
+	- 
+		db.runCommand({ split: "GT.T1_2", middle: {_id : 1}})
+	or 
+		db.runCommand({ split: "GT.T1_3", middle: {Country_1: 1}})
+	- then go back to the DB where the collections are stored. 
+	- do an sh.status() and it should give you a result showing the shards,
+	- the databases and the chunks on the collections.
